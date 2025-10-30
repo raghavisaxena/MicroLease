@@ -1,31 +1,23 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>MicroLease - Home</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      body { font-family: Arial, sans-serif; background:#f7f7f7; margin:0; padding:20px; }
-      header { display:flex; align-items:center; gap:12px; }
-      h1 { margin:0; }
-      .cards { display:flex; gap:16px; flex-wrap:wrap; margin-top:20px; }
-      .card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,.06); width:260px; }
-      button { padding:8px 12px; border:none; background:#2f9e44; color:#fff; border-radius:6px; cursor:pointer; }
-      a { color:#2f9e44; text-decoration:none; }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MicroLease - Lease Smarter, Live Lighter</title>
+    <meta name="description" content="Lease tech gadgets and equipment easily. Browse laptops, cameras, drones, and more." />
+    <meta name="author" content="MicroLease" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <meta property="og:title" content="MicroLease - Lease Smarter, Live Lighter" />
+    <meta property="og:description" content="Lease tech gadgets and equipment easily. Browse laptops, cameras, drones, and more." />
+    <meta property="og:type" content="website" />
+
   </head>
+
   <body>
-    <header>
-      <img src="" alt="" style="width:48px;height:48px;display:none;" />
-      <h1>MicroLease (MVP)</h1>
-      <div style="margin-left:auto;">
-        <a href="login.html">Login / Register</a>
-      </div>
-    </header>
-
-    <h2>Available Items</h2>
-    <div id="items" class="cards"></div>
-
-    <script src="app.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
