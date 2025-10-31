@@ -58,7 +58,7 @@ const AddItem = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Price per Day ($)</Label>
+                <Label htmlFor="price">Price per Day (₹)</Label>
                 <Input
                   id="price"
                   type="number"

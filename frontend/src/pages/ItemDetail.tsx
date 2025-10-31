@@ -17,7 +17,7 @@ const ItemDetail = () => {
     id: "1",
     name: "MacBook Pro 16\" M3 Max",
     image: laptopImage,
-    pricePerDay: 45,
+    pricePerDay: 800,
     category: "Laptops",
     condition: "Excellent",
     location: "San Francisco, CA",
@@ -35,9 +35,9 @@ const ItemDetail = () => {
   };
 
   const relatedItems = [
-    { id: "2", name: "Canon EOS R5", image: cameraImage, pricePerDay: 35, category: "Cameras" },
-    { id: "3", name: "DJI Mavic 3 Pro", image: droneImage, pricePerDay: 50, category: "Drones" },
-    { id: "4", name: "iPhone 15 Pro Max", image: phoneImage, pricePerDay: 25, category: "Phones" },
+    { id: "2", name: "Canon EOS R5", image: cameraImage, pricePerDay: 1500, category: "Cameras" },
+    { id: "3", name: "DJI Mavic 3 Pro", image: droneImage, pricePerDay: 2000, category: "Drones" },
+    { id: "4", name: "iPhone 15", image: phoneImage, pricePerDay: 1200, category: "Phone" },
   ];
 
   return (
@@ -64,7 +64,7 @@ const ItemDetail = () => {
               <Badge className="mb-3">{item.category}</Badge>
               <h1 className="text-4xl font-bold text-foreground mb-4">{item.name}</h1>
               <div className="flex items-baseline gap-2 mb-6">
-                <span className="text-5xl font-bold text-primary">${item.pricePerDay}</span>
+                <span className="text-5xl font-bold text-primary">₹{item.pricePerDay}</span>
                 <span className="text-xl text-muted-foreground">/day</span>
               </div>
             </div>

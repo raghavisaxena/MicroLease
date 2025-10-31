@@ -1,11 +1,21 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Settings } from "lucide-react";
 import { useState } from "react";
+import { useTheme } from "@/hooks/use-theme";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -43,12 +53,46 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">Log in</Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm">Get Started</Button>
-            </Link>
+            {location.pathname === "/browse" ? (
+              <>
+                <Link to="/rscore">
+                  <Button size="sm">RScore</Button>
+                </Link>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" aria-label="Settings">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>Profile</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/rscore")}>RScore</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toggleTheme()}>Appearance</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/my-leases")}>MyLease</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        // simple logout: clear token and redirect to login
+                        localStorage.removeItem("token");
+                        navigate("/login");
+                      }}
+                    >
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">Log in</Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm">Get Started</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -76,12 +120,38 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="ghost" size="sm" className="w-full">Log in</Button>
-              </Link>
-              <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                <Button size="sm" className="w-full">Get Started</Button>
-              </Link>
+              {location.pathname === "/browse" ? (
+                <>
+                  <Link to="/rscore" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" size="sm" className="w-full">RScore</Button>
+                  </Link>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full" aria-label="Settings">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => { setIsMenuOpen(false); navigate('/profile'); }}>Profile</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setIsMenuOpen(false); navigate('/rscore'); }}>RScore</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setIsMenuOpen(false); toggleTheme(); }}>Appearance</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setIsMenuOpen(false); navigate('/my-leases'); }}>MyLease</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => { setIsMenuOpen(false); localStorage.removeItem('token'); navigate('/login'); }}>Log out</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" size="sm" className="w-full">Log in</Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                    <Button size="sm" className="w-full">Get Started</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

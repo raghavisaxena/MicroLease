@@ -22,6 +22,7 @@ const Home = () => {
         setBackendStatus("⚠️ Unable to connect to backend");
       });
   }, []);
+  
   const features = [
     {
       icon: Shield,
@@ -41,9 +42,9 @@ const Home = () => {
   ];
 
   const featuredItems = [
-    { name: "MacBook Pro", image: laptopImage, price: 45 },
-    { name: "Canon DSLR", image: cameraImage, price: 35 },
-    { name: "DJI Drone", image: droneImage, price: 50 },
+    { name: "MacBook Pro", image: laptopImage, price: 800 },
+    { name: "Canon DSLR", image: cameraImage, price: 1500 },
+    { name: "DJI Drone", image: droneImage, price: 2000 },
   ];
 
   return (
@@ -134,7 +135,7 @@ const Home = () => {
                 <div className="p-6">
                   <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
                   <div className="flex items-baseline gap-1 mb-4">
-                    <span className="text-2xl font-bold text-primary">${item.price}</span>
+                    <span className="text-2xl font-bold text-primary">₹{item.price}</span>
                     <span className="text-sm text-muted-foreground">/day</span>
                   </div>
                   <Link to="/browse">

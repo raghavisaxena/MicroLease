@@ -12,12 +12,12 @@ import tabletImage from "@/assets/tablet-1.jpg";
 
 const Browse = () => {
   const products = [
-    { id: "1", name: "MacBook Pro 16\"", image: laptopImage, pricePerDay: 45, category: "Laptops" },
-    { id: "2", name: "Canon EOS R5", image: cameraImage, pricePerDay: 35, category: "Cameras" },
-    { id: "3", name: "DJI Mavic 3 Pro", image: droneImage, pricePerDay: 50, category: "Drones" },
-    { id: "4", name: "iPhone 15 Pro Max", image: phoneImage, pricePerDay: 25, category: "Phones" },
-    { id: "5", name: "Sony WH-1000XM5", image: headphonesImage, pricePerDay: 15, category: "Audio" },
-    { id: "6", name: "iPad Pro 12.9\"", image: tabletImage, pricePerDay: 30, category: "Tablets" },
+    { id: "1", name: "MacBook Pro 16\"", image: laptopImage, pricePerDay: 800, category: "Laptops" },
+    { id: "2", name: "Canon EOS R5", image: cameraImage, pricePerDay: 1500, category: "Cameras" },
+    { id: "3", name: "DJI Mavic 3 Pro", image: droneImage, pricePerDay: 2000, category: "Drones" },
+    { id: "4", name: "iPhone 15 Pro Max", image: phoneImage, pricePerDay: 1200, category: "Phones" },
+    { id: "5", name: "Sony WH-1000XM5", image: headphonesImage, pricePerDay: 600, category: "Audio" },
+    { id: "6", name: "iPad Pro 12.9\"", image: tabletImage, pricePerDay: 1500, category: "Tablets" },
   ];
 
   return (

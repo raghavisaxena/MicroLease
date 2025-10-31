@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,8 +17,8 @@ const Login = () => {
   const ALLOWED_EMAIL_DOMAINS: string[] = []; // e.g. ['example.com', 'gmail.com']
 
   const validateEmail = (value: string) => {
-  // Format validation: stricter local-part (no '#', only common safe characters), domain basic structure
-  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    // Format validation: stricter local-part (no '#', only common safe characters), domain basic structure
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     if (!emailRegex.test(value)) return false;
 
     const domain = value.split("@")[1].toLowerCase();
@@ -28,59 +29,102 @@ const Login = () => {
     }
 
     // Domain validation: must contain at least one dot
-    if (!domain.includes('.')) return false;
+    if (!domain.includes(".")) return false;
 
     // Each domain label must not start or end with a hyphen and must be non-empty
-    const parts = domain.split('.');
+    const parts = domain.split(".");
     for (const label of parts) {
       if (!label) return false;
-      if (label.startsWith('-') || label.endsWith('-')) return false;
+      if (label.startsWith("-") || label.endsWith("-")) return false;
     }
 
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleSubmit = async(e: React.FormEvent) => {
+  e.preventDefault();
 
-    const trimmedEmail = email.trim();
+  const trimmedEmail = email.trim();
 
-    if (!trimmedEmail) {
-      toast.error("Please enter your email.");
-      return;
+  if (!trimmedEmail) {
+    toast.error("Please enter your email.");
+    return;
+  }
+
+  if (!validateEmail(trimmedEmail)) {
+    toast.error("Please enter a valid email address.");
+    return;
+  }
+
+  if (!password) {
+    toast.error("Please enter your password.");
+    return;
+  }
+
+  if (password.length < 6) {
+    toast.error("Password must be at least 6 characters.");
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/api/auth/login",
+      {
+        email: trimmedEmail,
+        password: password
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      toast.success("Login successful!");
+      // Store token if backend returns one
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+  navigate("/browse");
     }
-
-    if (!validateEmail(trimmedEmail)) {
-      toast.error("Please enter a valid email address.");
-      return;
+  } catch (error: any) {
+    console.error('Login error:', error.response?.data || error.message);
+    
+    if (error.response) {
+      // Backend returned an error response
+      const errorMessage = error.response.data?.message || 
+                          error.response.data?.error || 
+                          "Invalid email or password.";
+      toast.error(errorMessage);
+    } else if (error.request) {
+      // Request made but no response received
+      toast.error("Cannot reach server. Please check if the backend is running.");
+    } else {
+      // Something else went wrong
+      toast.error("An error occurred. Please try again.");
     }
-
-    if (!password) {
-      toast.error("Please enter your password.");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
-    }
-
-    // At this point validation passed. Replace with real auth call as needed.
-    toast.success("Login successful!");
-    navigate("/");
-  };
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center space-x-2 mb-8">
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center space-x-2 mb-8"
+          >
             <div className="w-10 h-10 bg-gradient-teal rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">M</span>
             </div>
-            <span className="text-2xl font-bold text-foreground">MicroLease</span>
+            <span className="text-2xl font-bold text-foreground">
+              MicroLease
+            </span>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Welcome Back
+          </h1>
           <p className="text-muted-foreground">Sign in to your account</p>
         </div>
 
@@ -135,14 +179,24 @@ const Login = () => {
               />
             </div>
 
-            <Button type="submit" size="lg" className="w-full" disabled={!email || !password || !!emailError}>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={!email || !password || !!emailError}
+            >
               Sign In
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <Link to="/register" className="text-primary font-medium hover:underline">
+            <span className="text-muted-foreground">
+              Don't have an account?{" "}
+            </span>
+            <Link
+              to="/register"
+              className="text-primary font-medium hover:underline"
+            >
               Sign up
             </Link>
           </div>

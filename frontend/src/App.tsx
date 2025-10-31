@@ -10,12 +10,16 @@ import ItemDetail from "./pages/ItemDetail";
 import MyLeases from "./pages/MyLeases";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import RScore from "./pages/RScore";
 import NotFound from "./pages/NotFound";
+import { ToastProvider } from "./components/ui/toast";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ToastProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -23,6 +27,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/browse" element={<Browse />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/rscore" element={<RScore />} />
           <Route path="/add-item" element={<AddItem />} />
           <Route path="/item/:id" element={<ItemDetail />} />
           <Route path="/my-leases" element={<MyLeases />} />
@@ -33,6 +39,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </ToastProvider>
   </QueryClientProvider>
 );
 

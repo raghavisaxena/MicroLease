@@ -29,7 +29,7 @@ const ProductCard = ({ id, name, image, pricePerDay, category }: ProductCardProp
             {name}
           </h3>
           <div className="flex items-baseline gap-1 mb-4">
-            <span className="text-2xl font-bold text-primary">${pricePerDay}</span>
+            <span className="text-2xl font-bold text-primary">₹{pricePerDay}</span>
             <span className="text-sm text-muted-foreground">/day</span>
           </div>
           <Button className="w-full" size="lg">
