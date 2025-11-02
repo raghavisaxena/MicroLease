@@ -237,7 +237,7 @@ const AddItem = () => {
                 <Input
                   id="price"
                   type="number"
-                  placeholder="25"
+                  placeholder="250"
                   className="h-12"
                   min="1"
                   value={formData.price}

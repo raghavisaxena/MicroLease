@@ -64,6 +64,43 @@ const Browse = () => {
       category: it.category || "Other",
     };
   });
+  // Friendly mapping for categories and derive categories from products
+  const CATEGORY_LABELS: Record<string, string> = {
+    audio: 'Audio Equipment',
+    books: 'Books',
+    clothing: 'Clothing',
+    electronic: 'Electronic Devices',
+    footwear: 'Footwear',
+    furniture: 'Furniture',
+    instrument: 'Instruments',
+    sports: 'Sports Equipment',
+    stationary: 'Stationary',
+    tools: 'Tools',
+  };
+
+  const knownCategoryKeys = new Set(Object.keys(CATEGORY_LABELS));
+
+  // derive categories from products so dropdown stays in sync with DB
+  const categories = useMemo(() => {
+    const seen = new Set<string>();
+    const unknown = new Set<string>();
+    products.forEach((p) => {
+      const cat = (p.category || '').toString().trim();
+      if (!cat) return;
+      const key = cat.toLowerCase();
+      if (knownCategoryKeys.has(key)) {
+        seen.add(key);
+      } else {
+        unknown.add(key);
+      }
+    });
+
+    // Build list: All -> known (mapped labels) -> Other (if unknown exists)
+    const knownList = Array.from(seen).sort().map((k) => ({ value: k, label: CATEGORY_LABELS[k] || k }));
+    const result = [{ value: 'all', label: 'All categories' }, ...knownList];
+    if (unknown.size > 0) result.push({ value: 'other', label: 'Other' });
+    return result;
+  }, [products]);
 
   const productsFiltered = useMemo(() => {
     let filtered = [...products];
@@ -116,7 +153,7 @@ const Browse = () => {
             Browse Equipment
           </h1>
           <p className="text-lg text-muted-foreground">
-            Discover thousands of tech gadgets available for lease
+            Discover thousands of items available for lease
           </p>
         </div>
 
@@ -134,20 +171,12 @@ const Browse = () => {
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-48 h-12">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder="All categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="audio">Audio Equipment</SelectItem>
-              <SelectItem value="books">Books</SelectItem>
-              <SelectItem value="clothing">Clothing</SelectItem>
-              <SelectItem value="electronic">Electronic Device</SelectItem>
-              <SelectItem value="footwear">Footwear</SelectItem>
-              <SelectItem value="furniture">Furniture</SelectItem>
-              <SelectItem value="instrument">Instruments</SelectItem>
-              <SelectItem value="sports">Sports Equipment</SelectItem>
-              <SelectItem value="stationary">Stationary</SelectItem>
-              <SelectItem value="tools">Tools</SelectItem>
-              <SelectItem value="other">All categories</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>

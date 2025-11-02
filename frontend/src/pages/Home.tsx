@@ -100,7 +100,7 @@ const Home = () => {
                 <span className="block text-primary mt-2">Live Lighter</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-lg leading-relaxed">
-                Access premium tech gadgets without the commitment. Browse, lease, and return with ease.
+                Access premium items without the commitment. Browse, lease, and return with ease.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/browse">
