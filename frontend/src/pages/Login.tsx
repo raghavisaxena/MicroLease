@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import axios from "axios";
+import api from "@/lib/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -67,35 +67,28 @@ const Login = () => {
   }
 
   try {
-    const response = await axios.post(
-      "http://localhost:5000/api/auth/login",
-      {
-        email: trimmedEmail,
-        password: password
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.post("/auth/login", {
+      email: trimmedEmail,
+      password: password,
+    });
 
     if (response.status === 200) {
       toast.success("Login successful!");
       // Store token if backend returns one
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem("token", response.data.token);
       }
-  navigate("/browse");
+      navigate("/browse");
     }
   } catch (error: any) {
-    console.error('Login error:', error.response?.data || error.message);
-    
+    console.error("Login error:", error.response?.data || error.message);
+
     if (error.response) {
       // Backend returned an error response
-      const errorMessage = error.response.data?.message || 
-                          error.response.data?.error || 
-                          "Invalid email or password.";
+      const errorMessage =
+        error.response.data?.message ||
+        error.response.data?.error ||
+        "Invalid email or password.";
       toast.error(errorMessage);
     } else if (error.request) {
       // Request made but no response received

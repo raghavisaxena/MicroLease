@@ -1,20 +1,36 @@
 import axios from "axios";
 
-// Create an axios instance for all API requests
 const api = axios.create({
-  baseURL: "/api", // Vite proxy will redirect this to http://localhost:5000
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "http://localhost:5000/api",
+  headers: { "Content-Type": "application/json" },
 });
 
-// Optional: attach token from localStorage (for auth)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Log error for debugging
+    if (error.response) {
+      console.error("API Error:", {
+        url: error.config?.url,
+        status: error.response.status,
+        message: error.response.data?.message || error.message,
+        data: error.response.data,
+      });
+    } else if (error.request) {
+      console.error("API Error - No response:", {
+        url: error.config?.url,
+        message: "No response from server",
+      });
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

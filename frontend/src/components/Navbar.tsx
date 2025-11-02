@@ -16,8 +16,8 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-
   const isActive = (path: string) => location.pathname === path;
+  const isAuthenticated = !!localStorage.getItem('token');
 
   const navLinks = [
     { path: "/", label: "Home" },
@@ -53,7 +53,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            {location.pathname === "/browse" ? (
+            {isAuthenticated ? (
               <>
                 <Link to="/rscore">
                   <Button size="sm">RScore</Button>
@@ -73,9 +73,9 @@ const Navbar = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => {
-                        // simple logout: clear token and redirect to login
+                        // simple logout: clear token and redirect to home
                         localStorage.removeItem("token");
-                        navigate("/login");
+                        navigate("/");
                       }}
                     >
                       Log out
@@ -120,7 +120,7 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-              {location.pathname === "/browse" ? (
+              {isAuthenticated ? (
                 <>
                   <Link to="/rscore" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="ghost" size="sm" className="w-full">RScore</Button>
@@ -138,7 +138,7 @@ const Navbar = () => {
                       <DropdownMenuItem onClick={() => { setIsMenuOpen(false); toggleTheme(); }}>Appearance</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => { setIsMenuOpen(false); navigate('/my-leases'); }}>MyLease</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => { setIsMenuOpen(false); localStorage.removeItem('token'); navigate('/login'); }}>Log out</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setIsMenuOpen(false); localStorage.removeItem('token'); navigate('/'); }}>Log out</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>

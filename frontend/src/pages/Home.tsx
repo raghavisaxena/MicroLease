@@ -2,18 +2,25 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import heroImage from "@/assets/hero-image.jpg";
-import laptopImage from "@/assets/laptop-1.jpg";
-import cameraImage from "@/assets/camera-1.jpg";
-import droneImage from "@/assets/drone-1.jpg";
 import { ArrowRight, Shield, Clock, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import api from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 const Home = () => {
-   const [backendStatus, setBackendStatus] = useState("Connecting...");
+  const [backendStatus, setBackendStatus] = useState("Connecting...");
+
+  // Fetch items for featured section
+  const { data: itemsData, isLoading: isLoadingItems } = useQuery<any[]>({
+    queryKey: ["items"],
+    queryFn: async () => {
+      const res = await api.get("/items");
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    staleTime: 1000 * 30, // 30s
+  });
 
   useEffect(() => {
-   
     api.get("/test")
       .then((res) => {
         setBackendStatus(res.data.message || "Backend connected!");
@@ -22,6 +29,43 @@ const Home = () => {
         setBackendStatus("⚠️ Unable to connect to backend");
       });
   }, []);
+
+  // Get featured items (first 3 available items)
+  const featuredItems = useMemo(() => {
+    if (!itemsData) return [];
+    
+    return itemsData
+      .filter((item: any) => item.availability !== false)
+      .slice(0, 3)
+      .map((it: any) => {
+        const raw = it.imageUrl || "";
+        let imageSrc = "/placeholder.svg";
+
+        if (raw && typeof raw === "string") {
+          const trimmed = raw.trim();
+          if (trimmed.startsWith("data:")) {
+            imageSrc = trimmed;
+          } else if (trimmed.startsWith("http") || trimmed.startsWith("/")) {
+            imageSrc = trimmed;
+          } else {
+            const base64pattern = /^[A-Za-z0-9+/=\n\r]+$/;
+            const onlyBase64 = base64pattern.test(trimmed.replace(/\s/g, ""));
+            if (onlyBase64) {
+              imageSrc = `data:image/jpeg;base64,${trimmed}`;
+            } else if (trimmed.length > 0) {
+              imageSrc = trimmed;
+            }
+          }
+        }
+
+        return {
+          id: String(it.id),
+          name: it.title || it.name || "Untitled",
+          image: imageSrc,
+          price: it.pricePerDay || it.price || 0,
+        };
+      });
+  }, [itemsData]);
   
   const features = [
     {
@@ -41,11 +85,6 @@ const Home = () => {
     },
   ];
 
-  const featuredItems = [
-    { name: "MacBook Pro", image: laptopImage, price: 800 },
-    { name: "Canon DSLR", image: cameraImage, price: 1500 },
-    { name: "DJI Drone", image: droneImage, price: 2000 },
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -124,26 +163,32 @@ const Home = () => {
             <p className="text-lg text-muted-foreground">Start with these trending items</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            {featuredItems.map((item, index) => (
-              <div
-                key={index}
-                className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all"
-              >
-                <div className="aspect-square bg-secondary">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-4">
-                    <span className="text-2xl font-bold text-primary">₹{item.price}</span>
-                    <span className="text-sm text-muted-foreground">/day</span>
+            {isLoadingItems ? (
+              <p className="text-muted-foreground">Loading featured items...</p>
+            ) : featuredItems.length > 0 ? (
+              featuredItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all"
+                >
+                  <div className="aspect-square bg-secondary">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   </div>
-                  <Link to="/browse">
-                    <Button className="w-full" size="lg">View Details</Button>
-                  </Link>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
+                    <div className="flex items-baseline gap-1 mb-4">
+                      <span className="text-2xl font-bold text-primary">₹{item.price}</span>
+                      <span className="text-sm text-muted-foreground">/day</span>
+                    </div>
+                    <Link to={`/item/${item.id}`}>
+                      <Button className="w-full" size="lg">View Details</Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-muted-foreground">No featured items available</p>
+            )}
           </div>
           <div className="text-center mt-12">
             <Link to="/browse">

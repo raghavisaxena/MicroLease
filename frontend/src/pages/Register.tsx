@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import api from "@/lib/api";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const Register = () => {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!firstName.trim() || firstName.trim().length < 2) {
@@ -82,9 +83,37 @@ const Register = () => {
       return;
     }
 
-    // At this point validation passed. Replace with real registration call as needed.
-    toast.success("Account created successfully!");
-    navigate("/login");
+    try {
+      const response = await api.post("/auth/register", {
+        name: `${firstName} ${lastName}`,
+        email: trimmedEmail,
+        password: password,
+        role: "lessee", // Default role, can be changed later
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Account created successfully!");
+        // Store token if backend returns one
+        if (response.data.token) {
+          localStorage.setItem("token", response.data.token);
+        }
+        navigate("/browse");
+      }
+    } catch (error: any) {
+      console.error("Register error:", error.response?.data || error.message);
+
+      if (error.response) {
+        const errorMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          "Failed to create account. Please try again.";
+        toast.error(errorMessage);
+      } else if (error.request) {
+        toast.error("Cannot reach server. Please check if the backend is running.");
+      } else {
+        toast.error("An error occurred. Please try again.");
+      }
+    }
   };
 
   return (
