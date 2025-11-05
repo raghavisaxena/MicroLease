@@ -172,7 +172,7 @@ const Home = () => {
                   className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all"
                 >
                   <div className="aspect-square bg-secondary">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover object-top" />
                   </div>
                   <div className="p-6">
                     <h3 className="text-xl font-semibold mb-2">{item.name}</h3>

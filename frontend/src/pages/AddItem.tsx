@@ -15,10 +15,11 @@ import api from "@/lib/api";
 
 const AddItem = () => {
   const navigate = useNavigate();
+  const isAuthenticated = !!localStorage.getItem("token");
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const editId = searchParams.get('id');
+  const editId = searchParams.get("id");
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState(false);
   const [formData, setFormData] = useState({
@@ -92,7 +93,7 @@ const AddItem = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Check if user is logged in
     const token = localStorage.getItem("token");
     if (!token) {
@@ -116,10 +117,10 @@ const AddItem = () => {
 
       if (isEditing && editId) {
         response = await api.put(`/items/${editId}`, payload);
-        toast.success('Item updated successfully!');
+        toast.success("Item updated successfully!");
       } else {
-        response = await api.post('/items', payload);
-        toast.success('Item listed successfully!');
+        response = await api.post("/items", payload);
+        toast.success("Item listed successfully!");
       }
 
       // Invalidate items queries so Browse and MyLeases will refetch automatically
@@ -141,14 +142,17 @@ const AddItem = () => {
           condition: "",
           imageUrl: "",
         });
-        navigate('/browse');
+        navigate("/browse");
       } else {
         // After editing, go to My Listings
-        navigate('/my-leases');
+        navigate("/my-leases");
       }
     } catch (error: any) {
-      console.error('Error listing/updating item:', error);
-      toast.error(error.response?.data?.message || 'Failed to save item. Please try again.');
+      console.error("Error listing/updating item:", error);
+      toast.error(
+        error.response?.data?.message ||
+        "Failed to save item. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -163,18 +167,20 @@ const AddItem = () => {
         const res = await api.get(`/items/${editId}`);
         const it = res.data;
         setFormData({
-          name: it.title || '',
-          category: it.category || '',
-          price: it.pricePerDay ? String(it.pricePerDay) : '',
-          description: it.description || '',
-          location: it.location || '',
-          condition: it.condition || '',
-          imageUrl: it.imageUrl || '',
+          name: it.title || "",
+          category: it.category || "",
+          price: it.pricePerDay ? String(it.pricePerDay) : "",
+          description: it.description || "",
+          location: it.location || "",
+          condition: it.condition || "",
+          imageUrl: it.imageUrl || "",
         });
         setIsEditing(true);
       } catch (err: any) {
-        console.error('Failed to load item for editing', err);
-        toast.error(err?.response?.data?.message || 'Failed to load item for editing');
+        console.error("Failed to load item for editing", err);
+        toast.error(
+          err?.response?.data?.message || "Failed to load item for editing"
+        );
       } finally {
         setLoading(false);
       }
@@ -183,16 +189,31 @@ const AddItem = () => {
     loadItem();
   }, [editId]);
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) {
+    return <div>Redirecting to login...</div>;
+  }
+
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4">{isEditing ? 'Edit Item' : 'List Your Item'}</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-4">
+              {isEditing ? "Edit Item" : "List Your Item"}
+            </h1>
             <p className="text-lg text-muted-foreground">
-              {isEditing ? 'Update your listing details below' : 'Share your tech gadgets with the community and earn'}
+              {isEditing
+                ? "Update your listing details below"
+                : "Share your tech gadgets with the community and earn"}
             </p>
           </div>
 
@@ -212,7 +233,11 @@ const AddItem = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select value={formData.category} onValueChange={(value) => handleChange("category", value)} required>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => handleChange("category", value)}
+                  required
+                >
                   <SelectTrigger className="h-12">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
@@ -220,7 +245,9 @@ const AddItem = () => {
                     <SelectItem value="audio">Audio Equipment</SelectItem>
                     <SelectItem value="books">Books</SelectItem>
                     <SelectItem value="clothing">Clothing</SelectItem>
-                    <SelectItem value="electronic">Electronic Device</SelectItem>
+                    <SelectItem value="electronic">
+                      Electronic Device
+                    </SelectItem>
                     <SelectItem value="footwear">Footwear</SelectItem>
                     <SelectItem value="furniture">Furniture</SelectItem>
                     <SelectItem value="instrument">Instruments</SelectItem>
@@ -261,18 +288,19 @@ const AddItem = () => {
               <div className="space-y-2">
                 <Label>Images</Label>
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer relative ${
-                    isDragging
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer relative ${isDragging
                       ? "border-primary bg-primary/5 scale-[1.02]"
                       : "border-border hover:border-primary"
-                  }`}
+                    }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
                   <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground mb-2">
-                    {isDragging ? "Drop your image here" : "Click to upload or drag and drop"}
+                    {isDragging
+                      ? "Drop your image here"
+                      : "Click to upload or drag and drop"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     PNG, JPG up to 10MB
@@ -285,7 +313,11 @@ const AddItem = () => {
                   />
                   {formData.imageUrl && (
                     <div className="mt-4">
-                      <img src={formData.imageUrl} alt="Preview" className="max-h-32 mx-auto rounded shadow-md" />
+                      <img
+                        src={formData.imageUrl}
+                        alt="Preview"
+                        className="max-h-32 object-top mx-auto rounded shadow-md"
+                      />
                     </div>
                   )}
                 </div>
@@ -306,7 +338,11 @@ const AddItem = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="condition">Condition</Label>
-                  <Select value={formData.condition} onValueChange={(value) => handleChange("condition", value)} required>
+                  <Select
+                    value={formData.condition}
+                    onValueChange={(value) => handleChange("condition", value)}
+                    required
+                  >
                     <SelectTrigger className="h-12">
                       <SelectValue placeholder="Select condition" />
                     </SelectTrigger>
@@ -321,10 +357,26 @@ const AddItem = () => {
               </div>
 
               <div className="pt-6 flex gap-4">
-                <Button type="submit" size="lg" className="flex-1" disabled={loading}>
-                  {loading ? (isEditing ? 'Saving...' : 'Listing...') : (isEditing ? 'Update Item' : 'List Item')}
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="flex-1"
+                  disabled={loading}
+                >
+                  {loading
+                    ? isEditing
+                      ? "Saving..."
+                      : "Listing..."
+                    : isEditing
+                      ? "Update Item"
+                      : "List Item"}
                 </Button>
-                <Button type="button" variant="outline" size="lg" onClick={() => navigate("/browse")}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => navigate("/browse")}
+                >
                   Cancel
                 </Button>
               </div>

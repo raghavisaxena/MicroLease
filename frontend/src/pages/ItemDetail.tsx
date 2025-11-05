@@ -173,7 +173,7 @@ const ItemDetail = () => {
               <img
                 src={getImageSrc(item.imageUrl)}
                 alt={item.title || item.name || "Item"}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-top"
               />
             </div>
           </div>
