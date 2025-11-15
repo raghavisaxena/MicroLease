@@ -8,10 +8,7 @@ export function useTheme() {
       const stored = localStorage.getItem("theme");
       if (stored === "light" || stored === "dark") return stored;
     } catch (e) {}
-    // default: respect media preference
-    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      return "dark";
-    }
+    // default: light mode
     return "light";
   });
 
@@ -26,6 +23,18 @@ export function useTheme() {
       localStorage.setItem("theme", theme);
     } catch (e) {}
   }, [theme]);
+
+  // If a previous saved preference was 'dark', override it to 'light' so users see the light theme by default now.
+  // This is an explicit change requested by the user; it only runs once on mount.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark') {
+        setTheme('light');
+        localStorage.setItem('theme', 'light');
+      }
+    } catch (e) {}
+  }, []);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
