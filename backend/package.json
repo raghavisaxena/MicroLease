@@ -22,6 +22,9 @@
     "mysql2": "^3.3.2",
     "sequelize": "^6.32.1"
   },
+  "optionalDependencies": {
+    "nodemailer": "^6.9.3"
+  },
   "devDependencies": {
     "nodemon": "^2.0.22"
   }

@@ -12,6 +12,8 @@ const itemRoutes = require('./routes/items');
 const leaseRoutes = require('./routes/leases');
 const userRoutes = require('./routes/users');
 const paymentRoutes = require('./routes/payments');
+const walletRoutes = require('./routes/wallet');
+const kycRoutes = require('./routes/kyc');
 
 const app = express();
 app.use(cors(
@@ -30,6 +32,8 @@ app.use('/api/items', itemRoutes);
 app.use('/api/leases', leaseRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/kyc', kycRoutes);
 
 // Simple test endpoint used by the frontend health check
 app.get('/api/test', (req, res) => {

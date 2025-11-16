@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import heroImage from "@/assets/hero-image.jpg";
-import { ArrowRight, Shield, Clock, Sparkles } from "lucide-react";
+import { ArrowRight, Shield, Clock, Sparkles, Wallet, AlertCircle, CheckCircle } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import api from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -18,6 +18,21 @@ const Home = () => {
       return Array.isArray(res.data) ? res.data : [];
     },
     staleTime: 1000 * 30, // 30s
+  });
+
+  // Fetch wallet data for logged in user
+  const { data: walletData } = useQuery({
+    queryKey: ["wallet"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return null;
+      try {
+        const res = await api.get("/wallet");
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
   });
 
   useEffect(() => {
@@ -154,6 +169,125 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Security Deposit Feature Section */}
+      {walletData && (
+        <section className="py-20 bg-secondary/30">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-4">
+                  <Wallet className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Security Deposit System</span>
+                </div>
+                <h2 className="text-4xl font-bold text-foreground mb-6">Your Wallet & Security Deposits</h2>
+                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                  Secure your rentals with our transparent security deposit system. When you rent an item, a security deposit is held to protect both you and the item owner.
+                </p>
+
+                <div className="space-y-4 mb-8">
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">Deposit Held During Rental</h3>
+                      <p className="text-muted-foreground text-sm">
+                        Your security deposit is held safely while you enjoy the rented item.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0">
+                      <Clock className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">24-Hour Refund Window</h3>
+                      <p className="text-muted-foreground text-sm">
+                        After returning the item, you have 24 hours to get your full deposit back if there's no damage claim.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">Damage Protection</h3>
+                      <p className="text-muted-foreground text-sm">
+                        If the item is damaged, the owner can claim from the deposit. Otherwise, you get it all back.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Link to="/wallet">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    View My Wallet
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-8">
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-muted-foreground">Current Balance</span>
+                      <Wallet className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-4xl font-bold text-primary">
+                      ₹{walletData.wallet?.balance?.toFixed(2) || "0.00"}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-border pt-6 space-y-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Deposited</p>
+                      <p className="text-2xl font-semibold">₹{walletData.wallet?.totalDeposited?.toFixed(2) || "0.00"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Refunded</p>
+                      <p className="text-2xl font-semibold text-green-600">₹{walletData.wallet?.totalRefunded?.toFixed(2) || "0.00"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Claimed</p>
+                      <p className="text-2xl font-semibold text-red-600">₹{walletData.wallet?.totalClaimed?.toFixed(2) || "0.00"}</p>
+                    </div>
+                  </div>
+
+                  {walletData.deposits && walletData.deposits.length > 0 && (
+                    <div className="border-t border-border pt-6">
+                      <p className="text-sm font-semibold mb-3">Active Deposits</p>
+                      <div className="space-y-2">
+                        {walletData.deposits.slice(0, 3).map((deposit: any) => (
+                          <div key={deposit.id} className="flex items-start gap-2 text-sm">
+                            <div className="flex-shrink-0 mt-1">
+                              {deposit.status === "held" && <Clock className="h-4 w-4 text-yellow-600" />}
+                              {deposit.status === "refunded" && <CheckCircle className="h-4 w-4 text-green-600" />}
+                              {deposit.status === "claimed" && <AlertCircle className="h-4 w-4 text-red-600" />}
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {deposit.lease?.item?.title || "Item"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                ₹{deposit.amount.toFixed(2)} - {deposit.status}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Items */}
       <section className="py-20">

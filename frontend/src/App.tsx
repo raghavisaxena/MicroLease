@@ -12,6 +12,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import RScore from "./pages/RScore";
+import Wallet from "./pages/Wallet";
+import MyDetails from "./pages/MyDetails";
 import NotFound from "./pages/NotFound";
 import { ToastProvider } from "./components/ui/toast";
 
@@ -24,6 +26,8 @@ const router = createBrowserRouter(
     { path: "/add-item", element: <AddItem /> },
     { path: "/item/:id", element: <ItemDetail /> },
     { path: "/my-leases", element: <MyLeases /> },
+    { path: "/my-details", element: <MyDetails /> },
+    { path: "/wallet", element: <Wallet /> },
     { path: "/login", element: <Login /> },
     { path: "/register", element: <Register /> },
     { path: "/profile", element: <Profile /> },

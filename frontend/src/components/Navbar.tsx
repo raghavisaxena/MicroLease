@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Settings, LogOut, User2, Gauge, UserCircle, UserCircle2 } from "lucide-react";
+import { Menu, X, Settings, LogOut, User2, Gauge, UserCircle, UserCircle2, Wallet } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -24,6 +24,7 @@ const Navbar = () => {
     { path: "/browse", label: "Browse" },
     { path: "/add-item", label: "List Item" },
     { path: "/my-leases", label: "My Leases" },
+    { path: "/wallet", label: "Wallet" },
   ];
 
   return (
@@ -65,6 +66,14 @@ const Navbar = () => {
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <User2 className="mr-2 h-4 w-4" />
                       Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/wallet")}>
+                      <Wallet className="mr-2 h-4 w-4" />
+                      Wallet
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/my-details")}>
+                      <User2 className="mr-2 h-4 w-4" />
+                      My Details
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/rscore")}>
                       <Gauge className="mr-2 h-4 w-4" />
@@ -154,6 +163,22 @@ const Navbar = () => {
                         }}
                       >
                         Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          navigate("/wallet");
+                        }}
+                      >
+                        Wallet
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          navigate("/my-details");
+                        }}
+                      >
+                        My Details
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {

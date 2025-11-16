@@ -97,8 +97,8 @@ const ItemDetail = () => {
     return onlyBase64 ? `data:image/jpeg;base64,${raw}` : raw || "/placeholder.svg";
   };
 
-  // submit lease with chosen dates
-  const handleLeaseSubmit = async (startDate: string, endDate: string) => {
+  // submit lease with chosen dates and security deposit
+  const handleLeaseSubmit = async (startDate: string, endDate: string, securityDeposit: number) => {
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Please login to lease this item");
@@ -114,13 +114,21 @@ const ItemDetail = () => {
 
     setIsLeasing(true);
     try {
-      await api.post("/leases", {
+      const response = await api.post("/leases", {
         ItemId: parseInt(id || "0"),
         startDate,
         endDate,
       });
 
-      toast.success("Lease request created successfully!");
+      const leaseId = response.data.id;
+
+      // Create security deposit
+      await api.post("/wallet/deposit", {
+        leaseId,
+        amount: securityDeposit,
+      });
+
+      toast.success("Lease request created successfully with security deposit!");
       setLeaseModalOpen(false);
       navigate("/my-leases");
     } catch (error: any) {
@@ -271,6 +279,7 @@ const ItemDetail = () => {
             initialStart={new Date().toISOString().split('T')[0]}
             initialEnd={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
             title={`Lease ${item.title || 'Item'}`}
+            itemPrice={item.pricePerDay}
             onClose={() => setLeaseModalOpen(false)}
             onSubmit={handleLeaseSubmit}
           />
