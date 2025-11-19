@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import api from '@/lib/api';
 
 interface LeaseModalProps {
   open: boolean;
@@ -9,27 +12,18 @@ interface LeaseModalProps {
   itemPrice?: number; // Price per day
   onClose: () => void;
   onSubmit: (startDate: string, endDate: string, securityDeposit: number) => Promise<void> | void;
+  hideSecurityDeposit?: boolean; // New prop to hide security deposit for extend requests
 }
 
-const LeaseModal = ({ open, initialStart, initialEnd, title = 'Lease', itemPrice = 0, onClose, onSubmit }: LeaseModalProps) => {
+const LeaseModal = ({ open, initialStart, initialEnd, title = 'Lease', itemPrice = 0, onClose, onSubmit, hideSecurityDeposit = false }: LeaseModalProps) => {
   const today = new Date().toISOString().split('T')[0];
   const defaultStart = initialStart || today;
   const defaultEnd = initialEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   const [startDate, setStartDate] = useState<string>(defaultStart);
   const [endDate, setEndDate] = useState<string>(defaultEnd);
-  const [securityDeposit, setSecurityDeposit] = useState<number>(itemPrice);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setStartDate(initialStart || defaultStart);
-      setEndDate(initialEnd || defaultEnd);
-      setSecurityDeposit(itemPrice);
-      setSubmitting(false);
-    }
-  }, [open, initialStart, initialEnd, itemPrice]);
-
+  const navigate = useNavigate();
   // Calculate rental days and total
   const calculateDays = () => {
     if (!startDate || !endDate) return 0;
@@ -40,7 +34,17 @@ const LeaseModal = ({ open, initialStart, initialEnd, title = 'Lease', itemPrice
 
   const days = calculateDays();
   const rentalCost = days * itemPrice;
+  // Security deposit is 15% of total rental cost
+  const securityDeposit = Math.round(rentalCost * 0.15);
   const totalCost = rentalCost + securityDeposit;
+
+  useEffect(() => {
+    if (open) {
+      setStartDate(initialStart || defaultStart);
+      setEndDate(initialEnd || defaultEnd);
+      setSubmitting(false);
+    }
+  }, [open, initialStart, initialEnd, itemPrice]);
 
   if (!open) return null;
 
@@ -52,13 +56,31 @@ const LeaseModal = ({ open, initialStart, initialEnd, title = 'Lease', itemPrice
       alert('End date must be same or after start date');
       return;
     }
-    if (securityDeposit < itemPrice) {
-      alert(`Security deposit must be at least ₹${itemPrice}`);
-      return;
-    }
+
     try {
       setSubmitting(true);
+
+      // Check wallet balance before sending request
+      const walletResponse = await api.get('/wallet');
+      const currentBalance = walletResponse.data.wallet?.balance || 0;
+
+      if (currentBalance < totalCost) {
+        const shortfall = totalCost - currentBalance;
+        toast.error(`Insufficient wallet balance. You need ₹${shortfall.toFixed(2)} more.`);
+        toast.info('Redirecting to wallet to add funds...');
+        setSubmitting(false);
+        setTimeout(() => {
+          navigate('/wallet');
+          onClose();
+        }, 1500);
+        return;
+      }
+
+      // Submit the lease request (payment will be processed when owner approves)
       await onSubmit(startDate, endDate, securityDeposit);
+    } catch (error: any) {
+      console.error('Error in lease submission:', error);
+      toast.error(error.response?.data?.message || 'Failed to submit lease request');
     } finally {
       setSubmitting(false);
     }
@@ -78,24 +100,18 @@ const LeaseModal = ({ open, initialStart, initialEnd, title = 'Lease', itemPrice
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full p-2 border rounded" required />
           </div>
           
-          {/* Security Deposit Section */}
-          <div className="border-t border-border pt-4">
-            <label className="block text-sm font-semibold mb-3">Security Deposit</label>
-            <p className="text-xs text-muted-foreground mb-2">
-              This amount will be held during the rental period and refunded within 24 hours of returning the item (if no damage is claimed).
-            </p>
-            <div className="flex gap-2">
-              <span className="text-sm">₹</span>
-              <input 
-                type="number" 
-                value={securityDeposit} 
-                onChange={(e) => setSecurityDeposit(Math.max(itemPrice, parseFloat(e.target.value) || 0))}
-                min={itemPrice}
-                step="100"
-                className="w-full p-2 border rounded" 
-              />
+          {/* Security Deposit Section - Hidden for extend requests */}
+          {!hideSecurityDeposit && (
+            <div className="border-t border-border pt-4">
+              <label className="block text-sm font-semibold mb-3">Security Deposit (15% of rental cost)</label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Security deposit is automatically calculated as 15% of the total rental cost. This amount will be refunded within 24 hours of returning the item (if no damage is claimed).
+              </p>
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <span className="text-lg font-semibold">₹{securityDeposit}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Cost Breakdown */}
           <div className="bg-secondary/50 rounded p-4 space-y-2">
@@ -103,10 +119,12 @@ const LeaseModal = ({ open, initialStart, initialEnd, title = 'Lease', itemPrice
               <span>Rental ({days} day{days !== 1 ? 's' : ''})</span>
               <span>₹{rentalCost.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Security Deposit</span>
-              <span>₹{securityDeposit.toFixed(2)}</span>
-            </div>
+            
+              <div className="flex justify-between text-sm">
+                <span>Security Deposit</span>
+                <span>₹{securityDeposit.toFixed(2)}</span>
+              </div>
+            
             <div className="border-t border-border pt-2 flex justify-between font-semibold">
               <span>Total Amount</span>
               <span>₹{totalCost.toFixed(2)}</span>

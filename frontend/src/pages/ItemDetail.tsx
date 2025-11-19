@@ -51,6 +51,17 @@ const ItemDetail = () => {
     },
   });
 
+  // Fetch reviews for owner (if logged in)
+  const { data: ownerReviews } = useQuery({
+    queryKey: ["reviews", "user", item?.owner?.id],
+    queryFn: async () => {
+      if (!item?.owner?.id) return [];
+      const res = await api.get(`/reviews/user/${item.owner.id}`);
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: !!item?.owner?.id,
+  });
+
   // Get related items (same category, excluding current item)
   const relatedItems = (allItems || [])
     .filter((it: any) => it.id !== parseInt(id || "0") && it.category === item?.category)
@@ -114,21 +125,34 @@ const ItemDetail = () => {
 
     setIsLeasing(true);
     try {
+      // Check wallet balance first
+      const walletResponse = await api.get('/wallet');
+      const currentBalance = walletResponse.data.wallet?.balance || 0;
+      
+      const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const rentalCost = days * (item?.pricePerDay || 0);
+      const totalCost = rentalCost + securityDeposit;
+
+      if (currentBalance < totalCost) {
+        const shortfall = totalCost - currentBalance;
+        toast.error(`Insufficient wallet balance. You need ₹${shortfall.toFixed(2)} more.`);
+        toast.info('Redirecting to wallet to add funds...');
+        setTimeout(() => {
+          navigate('/wallet');
+          setLeaseModalOpen(false);
+        }, 2000);
+        setIsLeasing(false);
+        return;
+      }
+
+      // Create the lease request (payment will be processed when owner approves)
       const response = await api.post("/leases", {
         ItemId: parseInt(id || "0"),
         startDate,
         endDate,
       });
 
-      const leaseId = response.data.id;
-
-      // Create security deposit
-      await api.post("/wallet/deposit", {
-        leaseId,
-        amount: securityDeposit,
-      });
-
-      toast.success("Lease request created successfully with security deposit!");
+      toast.success("Lease request sent successfully! Payment will be processed when owner approves.");
       setLeaseModalOpen(false);
       navigate("/my-leases");
     } catch (error: any) {
@@ -226,10 +250,30 @@ const ItemDetail = () => {
             )}
 
             {item.owner && (
-              <div>
+              <Card className="p-6 bg-secondary/50 border-border">
                 <h3 className="font-semibold mb-3">Owner</h3>
-                <p className="text-muted-foreground">{item.owner.name || item.owner.email}</p>
-              </div>
+                <p className="text-muted-foreground mb-2">{item.owner.name || item.owner.email}</p>
+                {ownerReviews && ownerReviews.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-sm font-semibold mb-2">Reviews ({ownerReviews.length})</p>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {ownerReviews.slice(0, 3).map((review: any) => (
+                        <div key={review.id} className="p-3 bg-background/50 rounded border border-border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium">{review.reviewer?.name || "Anonymous"}</span>
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <span key={star} className={`text-xs ${star <= review.rating ? "text-yellow-400" : "text-gray-300"}`}>★</span>
+                              ))}
+                            </div>
+                          </div>
+                          {review.comment && <p className="text-xs text-muted-foreground">{review.comment}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
             )}
 
             <div className="flex gap-4 pt-4">
@@ -237,7 +281,31 @@ const ItemDetail = () => {
                 <Button
                   size="lg"
                   className="flex-1 text-lg py-6"
-                  onClick={() => setLeaseModalOpen(true)}
+                  onClick={async () => {
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                      toast.error("Please login to lease items");
+                      navigate("/login");
+                      return;
+                    }
+
+                    try {
+                      const res = await api.get("/kyc");
+                      const kyc = res.data.kyc;
+                      
+                      if (!kyc || !kyc.verified) {
+                        toast.error("Please complete your KYC verification to lease items");
+                        navigate("/my-details");
+                        return;
+                      }
+                      
+                      setLeaseModalOpen(true);
+                    } catch (err) {
+                      console.error("KYC check error", err);
+                      toast.error("Please complete your KYC verification first");
+                      navigate("/my-details");
+                    }
+                  }}
                   disabled={isLeasing || !item.availability}
                 >
                   {isLeasing ? "Processing..." : item.availability ? "Lease Now" : "Not Available"}
@@ -282,6 +350,7 @@ const ItemDetail = () => {
             itemPrice={item.pricePerDay}
             onClose={() => setLeaseModalOpen(false)}
             onSubmit={handleLeaseSubmit}
+            hideSecurityDeposit={true}
           />
         </div>
 

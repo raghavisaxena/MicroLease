@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { Wallet, User, SecurityDeposit, Lease } = require('../models');
+const { Wallet, User, SecurityDeposit, Lease, Item } = require('../models');
 
 // Get user's wallet
 router.get('/', auth, async (req, res) => {
@@ -21,6 +21,45 @@ router.get('/', auth, async (req, res) => {
     res.json({ wallet, deposits });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Add money to wallet
+router.post('/add-money', auth, async (req, res) => {
+  try {
+    const { amount, transactionId } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid amount' });
+    }
+
+    // Get or create wallet
+    let wallet = await Wallet.findOne({ where: { UserId: req.user.id } });
+    if (!wallet) {
+      wallet = await Wallet.create({ UserId: req.user.id, balance: 0 });
+    }
+
+    // Add money to wallet
+    wallet.balance = (wallet.balance || 0) + amount;
+    await wallet.save();
+
+    // Create transaction record
+    const { Transaction } = require('../models');
+    await Transaction.create({
+      UserId: req.user.id,
+      amount: amount,
+      type: 'credit',
+      description: `Added money to wallet${transactionId ? ` (Transaction ID: ${transactionId})` : ''}`
+    });
+
+    res.json({ 
+      message: 'Money added successfully',
+      wallet,
+      amountAdded: amount
+    });
+  } catch (err) {
+    console.error('Error adding money:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -240,6 +279,109 @@ router.get('/deposits/all', auth, async (req, res) => {
     res.json(deposits);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Process lease payment (rental cost + security deposit)
+router.post('/process-lease-payment', auth, async (req, res) => {
+  try {
+    const { leaseId, rentalCost, securityDeposit, ownerId } = req.body;
+
+    if (!leaseId || !rentalCost || rentalCost <= 0) {
+      return res.status(400).json({ message: 'Invalid lease ID or rental cost' });
+    }
+
+    const lease = await Lease.findByPk(leaseId, {
+      include: [{ model: require('../models').Item, as: 'item' }]
+    });
+    if (!lease) {
+      return res.status(404).json({ message: 'Lease not found' });
+    }
+
+    // Only lessee can pay for this lease
+    if (lease.LesseeId !== req.user.id) {
+      return res.status(403).json({ message: 'Only lessee can pay for this lease' });
+    }
+
+    // Get lessee's wallet
+    let lesseeWallet = await Wallet.findOne({ where: { UserId: req.user.id } });
+    if (!lesseeWallet) {
+      lesseeWallet = await Wallet.create({ UserId: req.user.id, balance: 0 });
+    }
+
+    const totalAmount = rentalCost + (securityDeposit || 0);
+
+    // Check if lessee has sufficient balance
+    if (lesseeWallet.balance < totalAmount) {
+      return res.status(400).json({ 
+        message: 'Insufficient wallet balance',
+        required: totalAmount,
+        current: lesseeWallet.balance,
+        shortfall: totalAmount - lesseeWallet.balance
+      });
+    }
+
+    // Deduct rental cost from lessee and add to owner
+    lesseeWallet.balance -= rentalCost;
+    await lesseeWallet.save();
+
+    // Credit rental cost to owner's wallet
+    let ownerWallet = await Wallet.findOne({ where: { UserId: ownerId } });
+    if (!ownerWallet) {
+      ownerWallet = await Wallet.create({ UserId: ownerId, balance: 0 });
+    }
+    ownerWallet.balance += rentalCost;
+    ownerWallet.totalClaimed = (ownerWallet.totalClaimed || 0) + rentalCost;
+    await ownerWallet.save();
+
+    // Handle security deposit if provided
+    let securityDepositRecord = null;
+    if (securityDeposit && securityDeposit > 0) {
+      // Deduct security deposit from lessee's wallet (hold it, don't transfer)
+      lesseeWallet.balance -= securityDeposit;
+      lesseeWallet.totalDeposited = (lesseeWallet.totalDeposited || 0) + securityDeposit;
+      await lesseeWallet.save();
+
+      // Create security deposit record (kept in user's wallet but locked)
+      securityDepositRecord = await SecurityDeposit.create({
+        LeaseId: leaseId,
+        UserId: req.user.id,
+        amount: securityDeposit,
+        status: 'held'
+      });
+    }
+
+    // Activate the lease and mark item as unavailable
+    lease.status = 'active';
+    await lease.save();
+
+    if (lease.item) {
+      lease.item.availability = false;
+      await lease.item.save();
+    }
+
+    // Create payment record
+    const { Payment } = require('../models');
+    await Payment.create({
+      LeaseId: leaseId,
+      amount: rentalCost,
+      mode: 'wallet',
+      status: 'paid',
+      paymentType: 'rental'
+    });
+
+    res.json({ 
+      message: 'Payment processed successfully',
+      lesseeWallet,
+      ownerWallet,
+      securityDeposit: securityDepositRecord,
+      amountPaidToOwner: rentalCost,
+      securityDepositHeld: securityDeposit || 0,
+      lease
+    });
+  } catch (err) {
+    console.error('Error processing lease payment:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -40,7 +40,7 @@ const MyDetails = () => {
       await api.post('/kyc', { nameOnId, aadharNumber, aadharMobile });
       toast.success('OTP sent to the provided mobile (mock)');
       setOtpSent(true);
-      await loadKyc();
+      // Don't reload KYC here as it resets otpSent to false
     } catch (err: any) {
       console.error(err);
       toast.error(err?.response?.data?.message || 'Failed to request OTP');
@@ -98,12 +98,41 @@ const MyDetails = () => {
         </Card>
 
         {otpSent && (
-          <Card className="p-6">
-            <h3 className="font-semibold mb-3">Enter OTP</h3>
+          <Card className="p-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <h3 className="font-semibold mb-3 text-blue-900 dark:text-blue-100">Enter OTP</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">A 6-digit OTP has been sent to {aadharMobile}</p>
             <div className="space-y-4">
-              <input value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full p-2 border rounded" placeholder="6-digit code" />
-              <div className="flex gap-2 justify-end">
-                <Button onClick={handleVerifyOtp} disabled={loading}>{loading ? 'Verifying...' : 'Verify OTP'}</Button>
+              <div>
+                <label className="block text-sm mb-2 font-medium">OTP Code</label>
+                <input 
+                  value={otp} 
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setOtp(value);
+                  }} 
+                  className="w-full p-3 border rounded-lg text-center text-2xl tracking-widest font-mono" 
+                  placeholder="000000"
+                  maxLength={6}
+                  type="text"
+                  inputMode="numeric"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Enter the 6-digit code sent to your mobile</p>
+              </div>
+              <div className="flex gap-2 justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={handleRequestOtp} 
+                  disabled={loading}
+                  type="button"
+                >
+                  Send Again
+                </Button>
+                <Button 
+                  onClick={handleVerifyOtp} 
+                  disabled={loading || otp.length !== 6}
+                >
+                  {loading ? 'Verifying...' : 'Verify OTP'}
+                </Button>
               </div>
             </div>
           </Card>

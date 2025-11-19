@@ -1,8 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Settings, LogOut, User2, Gauge, UserCircle, UserCircle2, Wallet } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
+import { toast } from "sonner";
+import { Menu, X, Settings, LogOut, User2, Gauge, UserCircle, UserCircle2, Wallet, Shield } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
+import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,14 +13,73 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { decodeToken } from "@/pages/Profile";
+
+interface User {
+  id?: number;
+  email?: string;
+  role?: string;
+  name?: string;
+}
 
 const Navbar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const isActive = (path: string) => location.pathname === path;
   const isAuthenticated = !!localStorage.getItem('token');
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    const payload = decodeToken(token);
+    if (!payload) {
+      setUser(null);
+      return;
+    }
+
+    // Immediately set user from token to show admin button quickly
+    setUser({ 
+      id: payload?.id, 
+      email: payload?.email, 
+      role: payload?.role, 
+      name: payload?.name 
+    });
+
+    // Then try to fetch full user info from backend if route exists
+    const userId = payload?.id;
+    if (userId) {
+      (async () => {
+        try {
+          const res = await api.get(`/users/${userId}`);
+          setUser(res.data.user || res.data);
+          console.log(res.data.user || res.data);
+        } catch (err) {
+          // Keep the token data if backend fetch fails
+          console.log("Using token data for user info");
+        }
+      })();
+    }
+  }, [location.pathname]);
+
+  // Fetch wallet balance
+  const { data: walletData } = useQuery({
+    queryKey: ["wallet"],
+    queryFn: async () => {
+      const res = await api.get("/wallet");
+      return res.data;
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const walletBalance = walletData?.wallet?.balance || 0;
 
   const navLinks = [
     { path: "/", label: "Home" },
@@ -58,9 +120,17 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
+                <Link to="/wallet">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    <span className="font-semibold">₹{walletBalance.toFixed(2)}</span>
+                  </Button>
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <UserCircle2 className="h-7 w-7" />
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <UserCircle2 className="h-7 w-7" />
+                    </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
@@ -79,6 +149,12 @@ const Navbar = () => {
                       <Gauge className="mr-2 h-4 w-4" />
                       RScore
                     </DropdownMenuItem>
+                    {user?.role === "admin" && (
+                      <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => {
@@ -123,6 +199,17 @@ const Navbar = () => {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-4">
+            {isAuthenticated && (
+              <Link to="/wallet" onClick={() => setIsMenuOpen(false)}>
+                <div className="bg-secondary/50 rounded-lg p-3 mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5" />
+                    <span className="text-sm font-medium">Wallet Balance</span>
+                  </div>
+                  <span className="text-lg font-bold">₹{walletBalance.toFixed(2)}</span>
+                </div>
+              </Link>
+            )}
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -188,6 +275,17 @@ const Navbar = () => {
                       >
                         RScore
                       </DropdownMenuItem>
+                      {user?.role === "admin" && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            navigate("/admin/dashboard");
+                          }}
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Panel
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         onClick={() => {
                           setIsMenuOpen(false);

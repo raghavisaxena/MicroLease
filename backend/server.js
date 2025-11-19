@@ -14,6 +14,16 @@ const userRoutes = require('./routes/users');
 const paymentRoutes = require('./routes/payments');
 const walletRoutes = require('./routes/wallet');
 const kycRoutes = require('./routes/kyc');
+const reviewRoutes = require('./routes/reviews');
+const rscoreRoutes = require('./routes/rscore');
+const disputeRoutes = require('./routes/disputes');
+
+// Admin routes
+const adminUsersRoutes = require('./routes/admin/users');
+const adminItemsRoutes = require('./routes/admin/items');
+const adminDisputesRoutes = require('./routes/admin/disputes');
+const adminTransactionsRoutes = require('./routes/admin/transactions');
+const adminDashboardRoutes = require('./routes/admin/dashboard');
 
 const app = express();
 app.use(cors(
@@ -34,6 +44,16 @@ app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/kyc', kycRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/rscore', rscoreRoutes);
+app.use('/api/disputes', disputeRoutes);
+
+// Admin routes
+app.use('/api/admin/users', adminUsersRoutes);
+app.use('/api/admin/items', adminItemsRoutes);
+app.use('/api/admin/disputes', adminDisputesRoutes);
+app.use('/api/admin/transactions', adminTransactionsRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
 
 // Simple test endpoint used by the frontend health check
 app.get('/api/test', (req, res) => {

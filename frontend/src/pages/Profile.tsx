@@ -11,7 +11,7 @@ type User = {
   role?: string;
 };
 
-function decodeToken(token: string): any | null {
+export function decodeToken(token: string): any | null {
   try {
     const payload = token.split(".")[1];
     // base64url -> base64
@@ -26,7 +26,7 @@ function decodeToken(token: string): any | null {
   } catch (e) {
     return null;
   }
-}
+} 
 
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);

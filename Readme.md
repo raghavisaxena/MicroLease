@@ -58,3 +58,4 @@ MicroLease is an equipment leasing MVP connecting owners (lessors) with renters 
 - Move frontend to React for a modern UI.
 - Add Dockerfile & docker-compose for easy deployment.
 
+Security Deposit = Round(Total Rental Cost × 0.15)

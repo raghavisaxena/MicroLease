@@ -8,7 +8,9 @@ class Payment extends Model {
       amount: { type: DataTypes.FLOAT, allowNull: false },
       date: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
       mode: { type: DataTypes.STRING, defaultValue: 'mock' },
-      status: { type: DataTypes.ENUM('paid','refunded','failed'), defaultValue: 'paid' }
+      status: { type: DataTypes.ENUM('paid','refunded','failed'), defaultValue: 'paid' },
+      transactionId: { type: DataTypes.STRING, allowNull: true },
+      paymentType: { type: DataTypes.ENUM('security_deposit', 'full_payment', 'rental'), defaultValue: 'rental' }
     }, { sequelize, modelName: 'Payment', tableName: 'payments', timestamps: true });
 
     return Payment;

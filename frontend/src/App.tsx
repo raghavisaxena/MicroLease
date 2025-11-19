@@ -17,6 +17,15 @@ import MyDetails from "./pages/MyDetails";
 import NotFound from "./pages/NotFound";
 import { ToastProvider } from "./components/ui/toast";
 
+// Admin imports
+import AdminRoute from "./components/AdminRoute";
+import AdminLogin from "./pages/admin/AdminLogin";
+import Dashboard from "./pages/admin/Dashboard";
+import Users from "./pages/admin/Users";
+import Items from "./pages/admin/Items";
+import Disputes from "./pages/admin/Disputes";
+import Transactions from "./pages/admin/Transactions";
+
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
@@ -32,6 +41,15 @@ const router = createBrowserRouter(
     { path: "/register", element: <Register /> },
     { path: "/profile", element: <Profile /> },
     { path: "/rscore", element: <RScore /> },
+    
+    // Admin routes
+    { path: "/admin/login", element: <AdminLogin /> },
+    { path: "/admin/dashboard", element: <AdminRoute><Dashboard /></AdminRoute> },
+    { path: "/admin/users", element: <AdminRoute><Users /></AdminRoute> },
+    { path: "/admin/items", element: <AdminRoute><Items /></AdminRoute> },
+    { path: "/admin/disputes", element: <AdminRoute><Disputes /></AdminRoute> },
+    { path: "/admin/transactions", element: <AdminRoute><Transactions /></AdminRoute> },
+    
     { path: "*", element: <NotFound /> },
   ]
 );

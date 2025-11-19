@@ -27,6 +27,12 @@ router.post('/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ message: 'Missing credentials' });
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    
+    // Check if user is banned (unless admin)
+    if (user.banned && user.role !== 'admin') {
+      return res.status(403).json({ message: 'Your account has been banned. Please contact support.' });
+    }
+    
     const valid = await user.validPassword(password);
     if (!valid) return res.status(400).json({ message: 'Invalid credentials' });
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET);

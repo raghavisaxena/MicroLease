@@ -8,7 +8,19 @@ class User extends Model {
       name: { type: DataTypes.STRING, allowNull: false },
       email: { type: DataTypes.STRING, allowNull: false, unique: true },
       password: { type: DataTypes.STRING, allowNull: false },
-      role: { type: DataTypes.ENUM('lessor','lessee','admin'), defaultValue: 'lessee' }
+      role: { type: DataTypes.ENUM('lessor','lessee','admin'), defaultValue: 'lessee' },
+      banned: { type: DataTypes.BOOLEAN, defaultValue: false },
+      // R-Score related stats
+      onTimeReturns: { type: DataTypes.INTEGER, defaultValue: 0 },
+      lateReturns: { type: DataTypes.INTEGER, defaultValue: 0 },
+      goodConditionReturns: { type: DataTypes.INTEGER, defaultValue: 0 },
+      damageReports: { type: DataTypes.INTEGER, defaultValue: 0 },
+      lostItems: { type: DataTypes.INTEGER, defaultValue: 0 },
+      disputesWon: { type: DataTypes.INTEGER, defaultValue: 0 },
+      disputesLost: { type: DataTypes.INTEGER, defaultValue: 0 },
+      ratingImpactSum: { type: DataTypes.FLOAT, defaultValue: 0 },
+      completedLeases: { type: DataTypes.INTEGER, defaultValue: 0 },
+      rscore: { type: DataTypes.FLOAT, defaultValue: 80 }
     }, { sequelize, modelName: 'User', tableName: 'users', timestamps: true });
 
     User.beforeCreate(async (user) => {

@@ -4,10 +4,14 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Clock, AlertCircle, CheckCircle } from "lucide-react";
+import { Wallet, Clock, AlertCircle, CheckCircle, Plus } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import PaymentGateway from "@/components/PaymentGateway";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const WalletPage = () => {
   const navigate = useNavigate();
@@ -15,6 +19,9 @@ const WalletPage = () => {
   const [claimingDeposit, setClaimingDeposit] = useState<number | null>(null);
   const [damageDescription, setDamageDescription] = useState("");
   const [damageAmount, setDamageAmount] = useState(0);
+  const [addMoneyModalOpen, setAddMoneyModalOpen] = useState(false);
+  const [addMoneyAmount, setAddMoneyAmount] = useState<string>("");
+  const [paymentGatewayOpen, setPaymentGatewayOpen] = useState(false);
 
   // Fetch wallet and deposits
   const { data: walletData, isLoading } = useQuery({
@@ -109,6 +116,44 @@ const WalletPage = () => {
     }
   };
 
+  const handleOpenAddMoney = () => {
+    setAddMoneyAmount("");
+    setAddMoneyModalOpen(true);
+  };
+
+  const handleProceedToPayment = () => {
+    const amount = parseFloat(addMoneyAmount);
+    if (!amount || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    if (amount < 10) {
+      toast.error("Minimum amount is ₹10");
+      return;
+    }
+    if (amount > 100000) {
+      toast.error("Maximum amount is ₹1,00,000");
+      return;
+    }
+    setAddMoneyModalOpen(false);
+    setPaymentGatewayOpen(true);
+  };
+
+  const handlePaymentSuccess = async (transactionId: string) => {
+    try {
+      const amount = parseFloat(addMoneyAmount);
+      await api.post("/wallet/add-money", {
+        amount,
+        transactionId
+      });
+      toast.success(`₹${amount} added to your wallet successfully!`);
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      setAddMoneyAmount("");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to add money");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -125,9 +170,15 @@ const WalletPage = () => {
       <Navbar />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">My Wallet</h1>
-          <p className="text-muted-foreground">Manage your security deposits and rental finances</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">My Wallet</h1>
+            <p className="text-muted-foreground">Manage your security deposits and rental finances</p>
+          </div>
+          <Button onClick={handleOpenAddMoney} size="lg" className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Add Money
+          </Button>
         </div>
 
         {/* Wallet Balance Card */}
@@ -241,12 +292,12 @@ const WalletPage = () => {
                     </div>
 
                     {/* Right Side - Actions */}
-                    <div className="flex flex-col justify-between">
-                      <div className="space-y-2">
+                    <div className="flex flex-col items-end justify-between">
+                      <div className="space-y-2 space-x-4">
                         {deposit.status === "held" && !deposit.returnedAt && (
                           <Button
                             onClick={() => handleReturnItem(deposit.id)}
-                            className="w-full"
+                            className="w-max"
                             variant="outline"
                           >
                             Mark Item as Returned
@@ -262,7 +313,7 @@ const WalletPage = () => {
                         {deposit.status === "held" && (
                           <Button
                             onClick={() => setClaimingDeposit(deposit.id)}
-                            className="w-full"
+                            className="w-max"
                             variant="destructive"
                           >
                             Claim Damage (Owner Only)
@@ -291,7 +342,7 @@ const WalletPage = () => {
                       {deposit.status === "held" && deposit.returnedAt && (
                         <Button
                           onClick={() => handleRefund(deposit.id)}
-                          className="w-full bg-green-600 hover:bg-green-700"
+                          className="w-max bg-green-600 hover:bg-green-700"
                           disabled={
                             deposit.refundDueAt &&
                             new Date() < new Date(deposit.refundDueAt)
@@ -372,6 +423,77 @@ const WalletPage = () => {
             </div>
           )}
         </div>
+
+        {/* Add Money Modal */}
+        <Dialog open={addMoneyModalOpen} onOpenChange={setAddMoneyModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Money to Wallet</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="amount">Enter Amount (₹)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={addMoneyAmount}
+                  onChange={(e) => setAddMoneyAmount(e.target.value)}
+                  min="10"
+                  max="100000"
+                  step="1"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Minimum: ₹10 | Maximum: ₹1,00,000
+                </p>
+              </div>
+
+              {/* Quick Amount Buttons */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Quick Add:</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[100, 500, 1000, 5000].map((amt) => (
+                    <Button
+                      key={amt}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddMoneyAmount(amt.toString())}
+                    >
+                      ₹{amt}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setAddMoneyModalOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleProceedToPayment}
+                  className="flex-1"
+                  disabled={!addMoneyAmount || parseFloat(addMoneyAmount) <= 0}
+                >
+                  Proceed to Pay
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Payment Gateway */}
+        <PaymentGateway
+          open={paymentGatewayOpen}
+          onClose={() => setPaymentGatewayOpen(false)}
+          amount={parseFloat(addMoneyAmount) || 0}
+          purpose="Add Money to Wallet"
+          onSuccess={handlePaymentSuccess}
+          onError={(error) => console.error("Payment error:", error)}
+        />
       </div>
     </div>
   );

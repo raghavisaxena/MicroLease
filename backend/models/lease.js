@@ -9,7 +9,13 @@ class Lease extends Model {
       startDate: { type: DataTypes.DATEONLY, allowNull: false },
       endDate: { type: DataTypes.DATEONLY, allowNull: false },
       amount: { type: DataTypes.FLOAT, allowNull: false },
-      status: { type: DataTypes.ENUM('pending','approved','rejected','active','completed','cancelled'), defaultValue: 'pending' }
+      securityDepositAmount: { type: DataTypes.FLOAT, defaultValue: 0 },
+      status: { type: DataTypes.ENUM('pending','approved','rejected','active','completed','cancelled'), defaultValue: 'pending' },
+      // Return info
+      returned: { type: DataTypes.BOOLEAN, defaultValue: false },
+      returnedAt: { type: DataTypes.DATE },
+      returnCondition: { type: DataTypes.ENUM('good','damaged','lost'), allowNull: true },
+      returnedOnTime: { type: DataTypes.BOOLEAN, defaultValue: null }
     }, { sequelize, modelName: 'Lease', tableName: 'leases', timestamps: true });
 
     return Lease;

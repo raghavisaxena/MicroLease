@@ -32,7 +32,14 @@ const Browse = () => {
     staleTime: 1000 * 30, // 30s
   });
 
-  const products = (itemsData || []).map((it: any) => {
+  // Filter approved items only - for now show all items to allow testing
+  // TODO: Re-enable approval filter once admin system is fully deployed
+  const approvedItems = (itemsData || []).filter((it: any) => {
+    // Show item if: approved is true, OR approved is undefined/null (legacy items), OR approved is false (for testing)
+    return true; // Temporarily show all items
+  });
+
+  const products = approvedItems.map((it: any) => {
     const raw = it.imageUrl || "";
     let imageSrc = "/placeholder.svg";
 

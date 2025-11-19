@@ -22,6 +22,7 @@ const AddItem = () => {
   const editId = searchParams.get("id");
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [kycChecked, setKycChecked] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -31,6 +32,35 @@ const AddItem = () => {
     condition: "",
     imageUrl: "",
   });
+
+  // Check KYC status on component mount
+  useEffect(() => {
+    const checkKyc = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const res = await api.get("/kyc");
+        const kyc = res.data.kyc;
+        
+        if (!kyc || !kyc.verified) {
+          toast.error("Please complete your KYC verification to list items");
+          navigate("/my-details");
+          return;
+        }
+        setKycChecked(true);
+      } catch (err) {
+        console.error("KYC check error", err);
+        toast.error("Please complete your KYC verification first");
+        navigate("/my-details");
+      }
+    };
+
+    checkKyc();
+  }, [navigate]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

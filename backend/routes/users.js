@@ -6,7 +6,7 @@ const { Op } = require('sequelize');
 // Get user details including best-effort location and a simple RScore
 router.get('/:id', async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.id, { attributes: ['id','name','email'] });
+    const user = await User.findByPk(req.params.id, { attributes: ['id','name','email','role'] });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     // Best-effort: find a recent item for this user to infer location
@@ -18,7 +18,7 @@ router.get('/:id', async (req, res) => {
     const completedAsLessee = await Lease.count({ where: { LesseeId: user.id, status: 'completed' } });
     const rscore = totalAsLessee > 0 ? Math.round((completedAsLessee / totalAsLessee) * 100) : null;
 
-    res.json({ id: user.id, name: user.name, email: user.email, location, rscore, totalAsLessee, completedAsLessee });
+    res.json({ id: user.id, name: user.name, email: user.email, location, rscore, totalAsLessee, completedAsLessee, role: user.role || null });
   } catch (err) {
     console.error('GET /api/users/:id error', err);
     res.status(500).json({ message: 'Server error' });

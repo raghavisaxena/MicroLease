@@ -9,6 +9,7 @@ class Item extends Model {
       category: { type: DataTypes.STRING },
       pricePerDay: { type: DataTypes.FLOAT, allowNull: false },
       availability: { type: DataTypes.BOOLEAN, defaultValue: true },
+      approved: { type: DataTypes.BOOLEAN, defaultValue: true }, // Auto-approve items by default
   // allow larger text to store base64 uploads or long URLs
   imageUrl: { type: DataTypes.TEXT },
       location: { type: DataTypes.STRING },
