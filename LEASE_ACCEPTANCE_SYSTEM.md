@@ -5,6 +5,8 @@ Implemented a complete lease acceptance workflow where owners can set security d
 
 ## Features Implemented
 
+
+
 ### 1. Security Deposit Handling
 - **Extend Lease**: Security deposit field is now hidden when extending existing leases (owners already have deposit on file)
 - **New Lease Acceptance**: Owners must set security deposit amount when accepting new lease requests
