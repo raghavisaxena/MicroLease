@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { Wallet, User, SecurityDeposit, Lease, Item } = require('../models');
+const { Wallet, User, SecurityDeposit , Lease, Item } = require('../models');
+
 
 // Get user's wallet
 router.get('/', auth, async (req, res) => {
@@ -11,8 +12,10 @@ router.get('/', auth, async (req, res) => {
     if (!wallet) {
       wallet = await Wallet.create({ UserId: req.user.id });
     }
+    
 
     // Get all security deposits for this user
+    
     const deposits = await SecurityDeposit.findAll({
       where: { UserId: req.user.id },
       include: [{ model: Lease, as: 'lease', include: [{ model: Item, as: 'item' }] }]
@@ -25,7 +28,9 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+
 // Add money to wallet
+
 router.post('/add-money', auth, async (req, res) => {
   try {
     const { amount, transactionId } = req.body;
@@ -33,18 +38,22 @@ router.post('/add-money', auth, async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid amount' });
     }
+    
 
     // Get or create wallet
+    
     let wallet = await Wallet.findOne({ where: { UserId: req.user.id } });
     if (!wallet) {
       wallet = await Wallet.create({ UserId: req.user.id, balance: 0 });
     }
 
     // Add money to wallet
+    
     wallet.balance = (wallet.balance || 0) + amount;
     await wallet.save();
 
     // Create transaction record
+    
     const { Transaction } = require('../models');
     await Transaction.create({
       UserId: req.user.id,
@@ -52,6 +61,7 @@ router.post('/add-money', auth, async (req, res) => {
       type: 'credit',
       description: `Added money to wallet${transactionId ? ` (Transaction ID: ${transactionId})` : ''}`
     });
+    
 
     res.json({ 
       message: 'Money added successfully',
@@ -65,6 +75,7 @@ router.post('/add-money', auth, async (req, res) => {
 });
 
 // Get wallet details by user ID
+
 router.get('/user/:userId', auth, async (req, res) => {
   try {
     const wallet = await Wallet.findOne({ where: { UserId: req.params.userId } });
@@ -79,6 +90,7 @@ router.get('/user/:userId', auth, async (req, res) => {
 });
 
 // Process security deposit (when lease is approved)
+
 router.post('/deposit', auth, async (req, res) => {
   try {
     const { leaseId, amount } = req.body;
@@ -93,6 +105,7 @@ router.post('/deposit', auth, async (req, res) => {
     }
 
     // Only lessee can deposit
+    
     if (lease.LesseeId !== req.user.id) {
       return res.status(403).json({ message: 'Only lessee can deposit for this lease' });
     }
@@ -103,12 +116,14 @@ router.post('/deposit', auth, async (req, res) => {
     }
 
     // Check if security deposit already exists
+    
     const existingDeposit = await SecurityDeposit.findOne({ where: { LeaseId: leaseId } });
     if (existingDeposit) {
       return res.status(400).json({ message: 'Security deposit already exists for this lease' });
     }
 
     // Create security deposit
+    
     const securityDeposit = await SecurityDeposit.create({
       LeaseId: leaseId,
       UserId: req.user.id,
@@ -117,6 +132,7 @@ router.post('/deposit', auth, async (req, res) => {
     });
 
     // Update wallet balance (deduct from user's balance for holding)
+    
     wallet.balance -= amount;
     wallet.totalDeposited += amount;
     await wallet.save();
@@ -129,6 +145,7 @@ router.post('/deposit', auth, async (req, res) => {
 });
 
 // Mark item as returned (start 24-hour refund countdown)
+
 router.post('/return-item', auth, async (req, res) => {
   try {
     const { leaseId } = req.body;
@@ -139,6 +156,7 @@ router.post('/return-item', auth, async (req, res) => {
     }
 
     // Only the lessee can mark item as returned
+    
     if (securityDeposit.UserId !== req.user.id) {
       return res.status(403).json({ message: 'Only lessee can mark item as returned' });
     }
@@ -155,6 +173,7 @@ router.post('/return-item', auth, async (req, res) => {
 });
 
 // Claim damage (owner claims from security deposit)
+
 router.post('/claim-damage', auth, async (req, res) => {
   try {
     const { securityDepositId, damageDescription, damageAmount } = req.body;
@@ -172,6 +191,7 @@ router.post('/claim-damage', auth, async (req, res) => {
     }
 
     // Only the item owner can claim damage
+    
     const lease = securityDeposit.lease;
     const item = lease.item;
     
@@ -184,6 +204,7 @@ router.post('/claim-damage', auth, async (req, res) => {
     }
 
     // Claim the damage amount (max the deposit amount)
+    
     const claimedAmount = Math.min(damageAmount, securityDeposit.amount);
 
     securityDeposit.status = 'claimed';
@@ -193,6 +214,7 @@ router.post('/claim-damage', auth, async (req, res) => {
     await securityDeposit.save();
 
     // Transfer amount to owner's wallet
+    
     let ownerWallet = await Wallet.findOne({ where: { UserId: item.OwnerId } });
     if (!ownerWallet) {
       ownerWallet = await Wallet.create({ UserId: item.OwnerId });
@@ -215,6 +237,7 @@ router.post('/claim-damage', auth, async (req, res) => {
 });
 
 // Process refund (automatically after 24 hours or manually if no damage claimed)
+
 router.post('/refund', auth, async (req, res) => {
   try {
     const { securityDepositId } = req.body;
@@ -225,6 +248,7 @@ router.post('/refund', auth, async (req, res) => {
     }
 
     // Only the lessee can request refund
+    
     if (securityDeposit.UserId !== req.user.id) {
       return res.status(403).json({ message: 'Only lessee can request refund' });
     }
@@ -238,6 +262,7 @@ router.post('/refund', auth, async (req, res) => {
     }
 
     // Check if 24 hours have passed since item was returned
+    
     if (securityDeposit.returnedAt) {
       const hoursSinceReturn = (Date.now() - new Date(securityDeposit.returnedAt).getTime()) / (1000 * 60 * 60);
       if (hoursSinceReturn < 24) {
@@ -250,6 +275,7 @@ router.post('/refund', auth, async (req, res) => {
     await securityDeposit.save();
 
     // Return amount to user's wallet
+    
     let wallet = await Wallet.findOne({ where: { UserId: req.user.id } });
     if (!wallet) {
       wallet = await Wallet.create({ UserId: req.user.id });
@@ -267,6 +293,7 @@ router.post('/refund', auth, async (req, res) => {
 });
 
 // Get all security deposits (for admin/dashboard)
+
 router.get('/deposits/all', auth, async (req, res) => {
   try {
     const deposits = await SecurityDeposit.findAll({
@@ -284,6 +311,7 @@ router.get('/deposits/all', auth, async (req, res) => {
 });
 
 // Process lease payment (rental cost + security deposit)
+
 router.post('/process-lease-payment', auth, async (req, res) => {
   try {
     const { leaseId, rentalCost, securityDeposit, ownerId } = req.body;
@@ -300,11 +328,13 @@ router.post('/process-lease-payment', auth, async (req, res) => {
     }
 
     // Only lessee can pay for this lease
+    
     if (lease.LesseeId !== req.user.id) {
       return res.status(403).json({ message: 'Only lessee can pay for this lease' });
     }
 
     // Get lessee's wallet
+    
     let lesseeWallet = await Wallet.findOne({ where: { UserId: req.user.id } });
     if (!lesseeWallet) {
       lesseeWallet = await Wallet.create({ UserId: req.user.id, balance: 0 });
@@ -313,6 +343,7 @@ router.post('/process-lease-payment', auth, async (req, res) => {
     const totalAmount = rentalCost + (securityDeposit || 0);
 
     // Check if lessee has sufficient balance
+    
     if (lesseeWallet.balance < totalAmount) {
       return res.status(400).json({ 
         message: 'Insufficient wallet balance',
@@ -323,10 +354,12 @@ router.post('/process-lease-payment', auth, async (req, res) => {
     }
 
     // Deduct rental cost from lessee and add to owner
+    
     lesseeWallet.balance -= rentalCost;
     await lesseeWallet.save();
 
     // Credit rental cost to owner's wallet
+    
     let ownerWallet = await Wallet.findOne({ where: { UserId: ownerId } });
     if (!ownerWallet) {
       ownerWallet = await Wallet.create({ UserId: ownerId, balance: 0 });
@@ -336,6 +369,7 @@ router.post('/process-lease-payment', auth, async (req, res) => {
     await ownerWallet.save();
 
     // Handle security deposit if provided
+    
     let securityDepositRecord = null;
     if (securityDeposit && securityDeposit > 0) {
       // Deduct security deposit from lessee's wallet (hold it, don't transfer)
@@ -344,6 +378,7 @@ router.post('/process-lease-payment', auth, async (req, res) => {
       await lesseeWallet.save();
 
       // Create security deposit record (kept in user's wallet but locked)
+      
       securityDepositRecord = await SecurityDeposit.create({
         LeaseId: leaseId,
         UserId: req.user.id,
@@ -353,6 +388,7 @@ router.post('/process-lease-payment', auth, async (req, res) => {
     }
 
     // Activate the lease and mark item as unavailable
+    
     lease.status = 'active';
     await lease.save();
 
@@ -362,6 +398,7 @@ router.post('/process-lease-payment', auth, async (req, res) => {
     }
 
     // Create payment record
+    
     const { Payment } = require('../models');
     await Payment.create({
       LeaseId: leaseId,
